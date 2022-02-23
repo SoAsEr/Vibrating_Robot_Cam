@@ -5,7 +5,7 @@ set(APRILTAG_SRCS apriltag/apriltag.c apriltag/apriltag_pose.c apriltag/apriltag
 
 file(GLOB COMMON_SRC apriltag/common/*.c)
 
-idf_component_register(SRCS "blink_example_main.c" ${TAG_FILES} ${APRILTAG_SRCS} ${COMMON_SRC}
+idf_component_register(SRCS "main.c" ${TAG_FILES} ${APRILTAG_SRCS} ${COMMON_SRC}
                     INCLUDE_DIRS "." "apriltag" "apriltag/common")
 
 set_source_files_properties(apriltag/common/matd.c PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized)
