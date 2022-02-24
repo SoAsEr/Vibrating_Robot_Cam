@@ -9,7 +9,9 @@
 
 // apriltag
 #include "apriltag.h"
+#include "apriltag_pose.h"
 #include "tag16h5.h"
+#include "tag25h9.h"
 #include "common/image_u8.h"
 #include "common/zarray.h"
 
@@ -81,8 +83,14 @@ esp_err_t camera_init(){
 
     return ESP_OK;
 }
+
+
+
 void app_main(){
     apriltag_detector_t *td = apriltag_detector_create();
+    //td->quad_sigma=??
+    //td->nthreads=2 ??
+    //quad_sigma vs resolution which does a better job
     apriltag_family_t *tf = tag16h5_create();
     apriltag_detector_add_family(td, tf);
 
@@ -109,10 +117,27 @@ void app_main(){
         for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
             zarray_get(detections, i, &det);
-            printf("detection %d ",det->id);
+            if(det->id!=0){
+                continue;
+            }
+            apriltag_detection_info_t info={
+                .det = det,
+                //.tagsize = tagsize,
+                // we need to find the focal length and the image center. Probably need calibration images which would mean a) saving images to the sd card
+                // then b) using opencv on our laptops to get the calibration
+                // then c) using those paramaters here
+                //.fx = fx,
+                //.fy = fy,
+                //.cx = cx,
+                //.cy = cy
+            };
+            apriltag_pose_t pose;
+            double err = estimate_tag_pose(&info, &pose);
+            printf("at distance: %f right: %f up: %f", pose.t->data[2], pose.t->data[0], pose.t->data[1]);
+            matd_destroy(pose.R);
+            matd_destroy(pose.t);
         }
         printf("\n");
-
         apriltag_detections_destroy(detections);
         //return the frame buffer back to the driver for reuse
 
