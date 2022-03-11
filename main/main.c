@@ -1,6 +1,7 @@
 
 
 #include <stdio.h>
+#include <math.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,6 +15,9 @@
 #include "tag25h9.h"
 #include "common/image_u8.h"
 #include "common/zarray.h"
+
+#define PI 3.14159265
+
 
 
 #define PWDN_GPIO_NUM  32
@@ -59,7 +63,7 @@ static camera_config_t camera_config = {
     //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
     .xclk_freq_hz = 20000000,
     .pixel_format = PIXFORMAT_GRAYSCALE,
-    .frame_size = FRAMESIZE_VGA,//Do not use sizes above QVGA when not JPEG
+    .frame_size = FRAMESIZE_QVGA,//Do not use sizes above QVGA when not JPEG
     //.jpeg_quality = 12, //0-63 lower number means higher quality
     .fb_count = 1 //if more than one, i2s runs in continuous mode.
 
@@ -122,18 +126,27 @@ void app_main(){
             }
             apriltag_detection_info_t info={
                 .det = det,
-                //.tagsize = tagsize,
+                .tagsize = 0.1045,
                 // we need to find the focal length and the image center. Probably need calibration images which would mean a) saving images to the sd card
                 // then b) using opencv on our laptops to get the calibration
                 // then c) using those paramaters here
-                //.fx = fx,
-                //.fy = fy,
-                //.cx = cx,
-                //.cy = cy
+                //for qgva:
+                .fx = 129.60368759,
+                .fy = 134.80734343,
+                .cx = 165.21124202,
+                .cy = 117.36965894
+                //for vga:
+                /*
+                .fx = 638.77534143,
+                .fy = 637.28064133,
+                .cx = 339.45777401,
+                .cy = 250.88214719,
+                */
             };
             apriltag_pose_t pose;
             double err = estimate_tag_pose(&info, &pose);
-            printf("at distance: %f right: %f up: %f", pose.t->data[2], pose.t->data[0], pose.t->data[1]);
+            printf("at distance: %f right: %f up: %f\n", pose.t->data[2], pose.t->data[0], pose.t->data[1]);
+            printf("at angle %f\n", atan(pose.t->data[0]/pose.t->data[2])*180.0 / PI);
             matd_destroy(pose.R);
             matd_destroy(pose.t);
         }
